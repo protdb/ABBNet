@@ -53,8 +53,6 @@ if __name__ == '__main__':
                              'aligned_subj_file': # path to aligned source file if config.upload_result = True
                             }
                     }
-
-
                 """
         except KeyboardInterrupt:
             worker.stop_worker()
