@@ -18,8 +18,6 @@ RUN alias python=python3
 RUN python -m pip install pytest
 RUN pip install biopython
 RUN pip install pandas
-RUN pip install faiss-cpu
-RUN pip install faiss-gpu
 RUN pip install einops
 RUN pip install matplotlib
 
