@@ -118,6 +118,11 @@ class SearchWorker(object):
         for task_id in list(self.processes.keys()):
             self.terminate_task(task_id)
 
+    def is_alive(self, task_id):
+        if task_id not in self.processes:
+            return False
+        return self.processes[task_id].is_alive()
+
     def clear_task_buffer(self):
         for task_id in list(self.processes.keys()):
             process = self.processes[task_id]
