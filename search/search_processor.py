@@ -119,6 +119,7 @@ class SearchProcessor(ModelProcessor):
         if self.is_upload_source:
             upload_file = out_dir / f'{upload_struct.get_id()}{upload_chain}.pdb'
             self.upload_pdb(upload_struct, upload_file)
+
         else:
             upload_file = None
         result = {'ref_file': str(upload_file),
@@ -153,9 +154,11 @@ class SearchProcessor(ModelProcessor):
     @staticmethod
     def extract_substructure(structure, chain, position, out_dir, extracted_dir=None):
         filename = f'{structure.get_id()}_{chain}{position[0]}_{chain}{position[1]}.pdb'
+        source_filename = f'{structure.get_id()}.pdb'
         filepath = out_dir / filename
         io_w_no_h = PDBIO()
         io_w_no_h.set_structure(structure)
+        # io_w_no_h.save(str(out_dir / source_filename), ChainSelect(chains=[chain]))
         io_w_no_h.save(str(filepath), ChainSelect(chains=[chain], position=position))
         if extracted_dir:
             extracted_path = extracted_dir / filename
@@ -210,6 +213,7 @@ class Imposer(object):
         sup.run()
         rms = sup.get_rms()
         rot_mat, tran_mat = sup.get_rotran()
+        target_id = target_structure.get_id()
         for atom in target_structure.get_atoms():
             atom.transform(rot_mat, tran_mat)
 
@@ -227,6 +231,11 @@ class Imposer(object):
             'target_struct': target_structure,
             'rms': rms,
             'position': position,
-            'abs_position': align_size
+            'abs_position': align_size,
+            'sup_matrix': {
+                'apply_to': target_id,
+                'rotation': rot_mat.tolist(),
+                'translation': tran_mat.tolist()
+            }
         }
         return result_record

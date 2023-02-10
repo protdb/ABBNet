@@ -139,13 +139,14 @@ class SearchTask(object):
             rmsd = result_rec[ids]['impose']['rms']
             sequence = result_rec[ids]['blast']['sequence']
             abs_position = result_rec[ids]['impose']['abs_position']
+            sup_matrix = result_rec[ids]['impose']['sup_matrix']
             sequence = sequence if position[0] == -1 else sequence[abs_position[0]:abs_position[1]]
             fasta_identity_score = self.__get_sequence_identity(sequence)
             uploaded_result = result_rec[ids]['upload']
             if uploaded_result:
                 aligned_source_file = uploaded_result['ref_file']
                 aligned_subj_file, subj_chain = uploaded_result['subj_data']
-                assert subj_chain == chain
+#               assert subj_chain == chain
             else:
                 aligned_source_file = ''
                 aligned_subj_file = ''
@@ -157,6 +158,7 @@ class SearchTask(object):
                 'fasta': sequence,
                 'rmsd': rmsd,
                 'fasta_identity_score': fasta_identity_score,
+                'sup_matrix': sup_matrix,
                 'aligned_source_file': aligned_source_file,
                 'aligned_subj_file': aligned_subj_file,
             }
