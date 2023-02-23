@@ -59,7 +59,7 @@ class SearchBlast(object):
 
     def process_blast(self, saml_string):
         blast_db = self.config.get_blast_db_name()
-        blast_cmd = NcbiblastpCommandline(db=str(blast_db), outfmt=5)
+        blast_cmd = NcbiblastpCommandline(db=str(blast_db), outfmt=5, max_target_seqs=7000)
         out, err = blast_cmd(stdin=saml_string)
         query_result = {}
         for record in NCBIXML.parse(StringIO(out)):
@@ -81,7 +81,7 @@ class SearchBlast(object):
         return inference_data
 
 
-TEST_FILE1 = "/home/dp/Data/SAML/test/pdb/sample1/1idr.pdb"
+TEST_FILE1 = "/home/dp/Data/SAML/test/pdb/sample10/1hxd.pdb"
 TEST_FILE2 = "/home/dp/Data/SAML/test/pdb/sample2/3qvo.pdb"
 TEST_FILE3 = "/home/dp/Data/SAML/test/pdb/sample3/6x9z.pdb"
 TEST_FILE4 = "/home/dp/Data/SAML/test/pdb/sample4/1A1B.pdb"
