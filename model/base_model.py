@@ -66,7 +66,7 @@ class ABBModel(nn.Module):
                                                  bias=True)
                                          for _ in range(config.n_gvp_encoder_layers))
 
-    def forward(self, batch):
+    def forward(self, batch, return_embedding=False):
         h_node_embeddings, h_edge_embeddings = self.build_features_embeddings(batch)
 
         for layer in self.gvp_encoder:
@@ -77,6 +77,8 @@ class ABBModel(nn.Module):
         rnn_embeddings = rnn_embeddings[rnn_mask]
         h_node_embeddings = (rnn_embeddings, h_node_embeddings[1])
         encoder_embeddings = h_node_embeddings
+        if return_embedding:
+            return encoder_embeddings[0]
 
         for i, layer in enumerate(self.gvp_decoder):
             h_node_embeddings = layer(h_node_embeddings, batch.edge_index, h_edge_embeddings,

@@ -18,5 +18,6 @@ def load_shared_model():
         logger.info(msg=f'Model loaded {model_path}')
     else:
         logger.error(msg=f'Model not found {model_path}')
+        raise (FileNotFoundError, f'Model not found {model_path}')
     model.share_memory()
     return model

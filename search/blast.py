@@ -32,6 +32,7 @@ class SearchBlast(object):
             embedding = result['embedding']
             groups = result['groups']
             sequence = result['sequence']
+            source_coo = result['source_coo']
         except KeyError:
             return result
         if self.e_value_trash == 'auto':
@@ -43,7 +44,9 @@ class SearchBlast(object):
                               'chain': chain,
                               'groups': groups,
                               'sequence': sequence,
-                              'embedding': embedding})
+                              'embedding': embedding,
+                              'source_coo': source_coo
+                              })
         result.update({'source': source_record})
         return result
 

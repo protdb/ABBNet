@@ -36,7 +36,8 @@ class ModelProcessor(object):
             'sequence': sequence,
             'alphabet': alphabet,
             'groups': surf_group,
-            'embedding': embedding
+            'embedding': embedding,
+            'source_coo': batch.x
         }
         return results
 
@@ -57,6 +58,7 @@ class ModelProcessor(object):
         return prediction_results
 
     def predict(self, batch):
+        self.model.eval()
         batch.to(self.device)
         with torch.no_grad():
             logit, embedding = self.model(batch)

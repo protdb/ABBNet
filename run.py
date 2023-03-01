@@ -1,58 +1,70 @@
-from search.search_worker import SearchWorker
+from fast_search.pdb_preprocessor import build_test_db
+from fast_search.search_engine import FastSearch
 
-# Test worker
 
-TEST_FILE1 = "/home/dp/Data/SAML/test/pdb/sample1/1dyw.pdb"  # Barrel
-TEST_FILE2 = "/home/dp/Data/SAML/test/pdb/sample4/1A1B.pdb"  # Beta-hairpin
+def start_task(task_id,
+               pdb_file,
+               chain,
+               callback_fn,
+               e_value_trash='auto',
+               page_size=32):
+
+
+        search_engine=FastSearch(task_id=task_id,
+                                 pdb_file=pdb_file,
+                                 chain=chain,
+                                 e_value_trash=e_value_trash,
+                                 page_size=page_size
+                                 )
+        search_engine.run_search(callback_fn=callback_fn)
+
+
+def test_callback(msg):
+    print(msg)
+
+""" message = {
+                'task_id': input task id 
+                'is_last_msg': True if last message of total
+                'n_count': Total processed items
+                'total':  Total items 
+                'data': [List of results]
+            }   
+            
+            results format:
+            {
+                pdb_id': PDB ID,
+                'chain': Chain,
+                'position':  (start, end)# (-1, -1) for full chain
+                'e_value': Statistical significance
+                'fasta': FASTA
+                'rmsd': RMSD,
+                'fasta_identity_score':  FASTA identity,
+                'sup_matrix': {'apply_to':  # str 'source' or 'subj' -- structure to apply impose matrix
+                                'rotation': Rotation matrix  
+                                'translation': Translation matrix} 
+                                
+                                ## Formula:  coord = rotation_mx.dot(atom.coord.T).T + translation_mx
+            }
+"""
+
+## To generate test preprocessed DB:
+
+def create_test_db():
+    test_db_ids = [('2ko3', 'A'), ('2ocs', 'A'), ('1tit', 'A')] # PDB ID - Chain list
+                                                                # Path to PDB files storage  class BaseConfig(object):
+                                                                #                    pdb_dir = '/home/dp/Data/PDB/'
+    build_test_db(test_db_ids)
+
+
+test_file = '/home/dp/Data/PDB/2ko3.pdb'
 
 if __name__ == '__main__':
+    start_task(
+        task_id='2ko3',
+        pdb_file=test_file,
+        chain='A',
+        callback_fn=test_callback
+    )
 
-    if __name__ == "__main__":
-        worker = SearchWorker()
-        task_id1 = worker.create_task(  # Input params
-            pdb_path=TEST_FILE1,  # Source PDB file
-            chain='A',  # Chain
-            search_mode=0,  # 0- basic search 1 - hierarchy search
-            e_value_trash='auto',  # 'auto' or float
-            # (maybe select of ['auto', 1.0, 0.1, 0.001, 0.0001, 0.00001, 0.000001]
-            page_size=50,  # size of chunk in the output queue
-            hierarchy_max_depth=2,  # max depth of hierarchy search
-            limit=None  # Maximum size of found results
-        )
-        worker.start_task(task_id1)
-        print('Process 1 started')
-        task_id2 = worker.create_task(
-            pdb_path=TEST_FILE2,
-            chain='A',
-            search_mode=1,
-            page_size=50,
-            limit=100
 
-        )
-        print('Process 2 started')
 
-        worker.start_task(task_id2)
-        try:
-            while True:
-                item = worker.read_queue()
-                print(item)
-                """
-                    Queue message:
-                    {'task_id' Task id
-                    'n_count': processed items from results,
-                    'total': total items in results  -1 for hierarchy search mode
-                    'data': {key: # pdb_id:chain
-                             {'e_value': # E-value score
-                             'pdb_id': # pdb id
-                             'chain' # chain
-                             'position': # residue positions (start, end)  or (-1, -1) for full chain
-                             'fasta' 
-                             'rmsd': # rmsd - rmsd  source - current file
-                             'fasta_identity_score': # aligned fasta identity source - current file 
-                             'aligned_source_file': # path to aligned source file if config.upload_result = True
-                             'aligned_subj_file': # path to aligned source file if config.upload_result = True
-                            }
-                    }
-                """
-        except KeyboardInterrupt:
-            worker.stop_worker()

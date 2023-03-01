@@ -18,8 +18,8 @@ class BaseConfig(object):
     n_sample_workers = 4
     min_chain_len = 16
     max_chain_len = 2048
-    batch_size = 2
-    num_workers = 1
+    batch_size = 8
+    num_workers = 16
     train_epochs = 16
     eval_models_every = 2
     log_result = 'file'
@@ -56,6 +56,7 @@ class BaseConfig(object):
         if os.path.exists(tmp_dir):
             shutil.rmtree(str(tmp_dir))
         tmp_dir.mkdir(exist_ok=True)
+
 
     def get_samples_dir(self):
         working_dir = Path(self.working_dir)
@@ -124,17 +125,22 @@ class DBConfig(object):
         self.saml_db_file = 'saml_db.data'
         self.blast_db_folder = 'saml_blast'
         self.blast_db_name = 'abbnet_blast'
+        self.preprocessed_dir = 'preprocessed_pdb'
         self.e_value_trash = 0.001
         self.min_saml_thresh_ = 16
         self.pdb_dir = config.get_pdb_dir()
         config.make_working_dir()
         working_dir = Path(config.working_dir)
+        self.preprocessed_dir = working_dir / self.preprocessed_dir
+        self.preprocessed_dir.mkdir(exist_ok=True)
         saml_db_folder = working_dir / self.saml_db_folder
         saml_db_folder.mkdir(exist_ok=True)
         self.blast_db_folder = saml_db_folder / self.blast_db_folder
         self.blast_db_folder.mkdir(exist_ok=True)
         self.saml_db_file_path = saml_db_folder / self.saml_db_file
         _, _, self.tmp_dir = config.get_samples_dir()
+        log_dir =  config.get_log_dir()
+        self.logging_file = log_dir / 'db_log.log'
 
     def get_db_path(self):
         return self.saml_db_file_path
@@ -168,9 +174,9 @@ class SearchConfig(object):
     def __init__(self):
         self.base_config = BaseConfig()
         self.base_config.make_working_dir()
-        self.upload_result = False
-        self.upload_source = False
-        self.upload_extract = False
+        self.upload_result = True
+        self.upload_source = True
+        self.upload_extract = True
         self.upload_dir = 'search_results'
         self.copy_extracted_folder = 'extracted'
         self.hierarchy_max_depth = 2

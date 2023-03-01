@@ -22,7 +22,6 @@ def search_task(
         page_size,
         hierarchy_max_depth,
         limit):
-    task = None
     task_logger_configure(log_queue)
     logger = logging.getLogger('task_logger')
     try:
@@ -42,9 +41,11 @@ def search_task(
         logger.info(msg=f"Task {task_id} successfully completed")
     except Exception as e:
         logger.error(msg=f"Error: {str(e)}")
+        raise
     finally:
-        if task is not None:
-            task.clear_task_ws()
+        pass
+        # if task is not None:
+        #     task.clear_task_ws()
 
 
 class SearchWorker(object):
@@ -73,9 +74,11 @@ class SearchWorker(object):
                     search_mode=0,
                     page_size=50,
                     hierarchy_max_depth=2,
-                    limit=None
+                    limit=None,
+                    task_id=None,
                     ):
-        task_id = str(uuid.uuid4())
+        if not task_id:
+            task_id = str(uuid.uuid4())
         process = mp.Process(target=search_task,
                              args=(self.model,
                                    self.output_queue,

@@ -25,7 +25,7 @@ class SearchTask(object):
             raise FileNotFoundError("PDB file not found")
         self.chain = chain
         self.e_value_trash = e_value_trash
-        self.task_id = task_id
+        self.task_id = task_id if task_id is not None else str(uuid.uuid4())
         self.search_processor = SearchBlast(task_id=self.task_id,
                                             search_mode=search_mode)
         self.page_size = page_size
@@ -49,7 +49,7 @@ class SearchTask(object):
 
     def search(self):
         if self.search_processor.processor.model is None:
-            raise EnvironmentError('Model not initialization')
+            raise EnvironmentError('Model not initialize')
 
         if self.mode == 0:  # simple search
             self.basic_search(pdb_file=self.pdb_file, chain=self.chain)
@@ -195,8 +195,11 @@ class SearchTask(object):
         return True
 
     def __get_sequence_identity(self, sequence):
-        align_score = pairwise2.align.globalxx(self.source_sequence, sequence, score_only=True)
-        identity_score = round(align_score / len(sequence), 2)
+        try:
+            align_score = pairwise2.align.globalxx(self.source_sequence, sequence, score_only=True)
+            identity_score = round(align_score / len(sequence), 2)
+        except:
+            return 0.6
         return identity_score
 
     def clear_task_ws(self):
