@@ -188,7 +188,6 @@ class OutputMgr(object):
                                                     select_ids=(select_idx_start, select_idx_end),
                                                     subj_sequence=subj_fasta)
 
-        apply_impose = 'subj' if apply_to == 'source' else 'source'
 
         out_msg = {
             'pdb_id': pdb_id,
@@ -198,7 +197,7 @@ class OutputMgr(object):
             'fasta': subj_fasta,
             'rmsd': rmsd,
             'fasta_identity_score': fasta_identity_score,
-            'sup_matrix': {'apply_to': apply_impose, 'rotation': rotation_mx, 'translation': translation_mx},
+            'sup_matrix': {'apply_to': apply_to, 'rotation': rotation_mx, 'translation': translation_mx},
         }
 
         if self.pdb_extractor:

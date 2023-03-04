@@ -46,8 +46,8 @@ class FastSearchModel(nn.Module):
         target_coo = target_coo[select_idx:select_idx + len(reference_coo), :]
         assert len(reference_coo) == len(target_coo)
 
-        rx, tx =self.__svd_impose(target_coo, reference_coo)
-        rmsd = self.align(reference_coo, target_coo, rx, tx)
+        rx, tx =self.__svd_impose(reference_coo, target_coo)
+        rmsd = self.align(target_coo, reference_coo, rx, tx)
         inference_record = {
             'apply_to': apply_to,
             'select_idx_start': select_idx,
