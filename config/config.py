@@ -178,8 +178,8 @@ class SearchConfig(object):
     def __init__(self):
         self.base_config = BaseConfig()
         self.base_config.make_working_dir()
-        self.upload_result = True
-        self.upload_source = True
+        self.upload_result = False
+        self.upload_source = False
         self.upload_extract = False
         self.upload_dir = 'search_results'
         self.copy_extracted_folder = 'extracted'
