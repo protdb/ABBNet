@@ -5,11 +5,12 @@ import torch
 import torch.optim as optim
 from tqdm import tqdm
 from model.base_model import ABBModel
-from pdb_datasets.datasets import get_loaders, SAML
+from finetune.finetune_dataset import get_loaders, STRIDE_LETTERS
 import torch.nn as nn
 from config.config import BaseConfig
 from sklearn.metrics import confusion_matrix
 
+from pdb_datasets.datasets import SAML
 from trainers.metrics import mmMetrics
 
 
@@ -25,7 +26,7 @@ class TrainerBase(object):
         self.n_epochs = self.config.train_epochs
         self.model_path = self.config.get_model_path()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001, betas=(0.9, 0.999))
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = nn.NLLLoss()
 
     def load_model(self):
         if os.path.exists(self.model_path):
@@ -39,24 +40,30 @@ class TrainerBase(object):
         state_dict = self.model.state_dict()
         torch.save(state_dict, self.model_path)
 
-    def one_step(self, item, phase):
-        alphabet = item.alphabet
-        logit = self.model(item)
-        loss = self.loss_fn(logit, alphabet)
+    def get_loss_metrics(self, logit, target, labels_size):
+        loss = self.loss_fn(logit, target)
         predicted_ = torch.argmax(logit, dim=-1).detach().cpu().numpy()
-        true = alphabet.detach().cpu().numpy()
-        correct = (predicted_ == true).sum()
-        confusion = confusion_matrix(y_true=true, y_pred=predicted_, labels=range(len(SAML)))
-        batch_size = item.batch.max() + 1
-        metric_rec = {
-            'num_nodes': len(alphabet),
-            'batch_size': batch_size.cpu().item(),
+        true_ = target.detach().cpu().numpy()
+        correct = (predicted_ == true_).sum()
+        metric = {
             'correct': correct,
-            'confusion': confusion,
             'loss': loss.cpu().item()
         }
+        return metric, loss
 
-        return loss, metric_rec
+    def one_step(self, item, phase):
+        alphabet = item.alphabet
+        stride = item.stride
+        logit_alphabet, logit_stride = self.model(item)
+        alphabet_metric, alphabet_loss = self.get_loss_metrics(logit_alphabet, alphabet, labels_size=len(SAML))
+        stride_metric, stride_loss = self.get_loss_metrics(logit_stride, stride, labels_size=len(STRIDE_LETTERS))
+        total_loss = stride_loss + alphabet_loss
+        metric_rec = {
+            'num_nodes': len(alphabet),
+            'items_metric': {'alphabet':alphabet_metric, 'stride':stride_metric}
+        }
+
+        return total_loss, metric_rec
 
     def train_model(self):
         since = time.time()

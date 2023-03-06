@@ -1,5 +1,7 @@
 from fast_search.pdb_preprocessor import build_test_db
 from fast_search.search_engine import FastSearch
+from finetune.rebuild_database import rebuild_database
+from trainers.train_model import train_abb_model
 
 
 def start_task(task_id,
@@ -56,15 +58,19 @@ def create_test_db():
     build_test_db(test_db_ids)
 
 
-test_file = '/home/dp/Data/PDB/2ko3.pdb'
+
+
+def test_search():
+    test_file = '/home/dp/Data/PDB/1ihv.pdb'
+    start_task(task_id='1ihv',
+               pdb_file=test_file,
+               chain='A',
+               callback_fn=test_callback
+               )
+
 
 if __name__ == '__main__':
-    start_task(
-        task_id='2ko3',
-        pdb_file=test_file,
-        chain='A',
-        callback_fn=test_callback
-    )
+   test_search()
 
 
 

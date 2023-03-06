@@ -5,6 +5,8 @@ import sys
 from fast_search.fs_datasets import get_fs_loaders
 from fast_search.fs_model import FastSearchModel
 from fast_search.pdb_extractor import is_extraction, PDBExtractor
+from finetune.finetune_dataset import STRIDE_LETTERS
+from finetune.rebuild_database import rebuild_database
 from logger_utils.logger_utils import setup_logger, log_message, log_error
 from model_processor.model_initialization import load_shared_model
 from search.blast import SearchBlast
@@ -35,13 +37,13 @@ class FastSearch(object):
         self.source_chain = chain
         self.e_value_trash = e_value_trash
         self.task_id = task_id
-        self.search_processor = SearchBlast(task_id=self.task_id,
-                                            search_mode=0)
         try:
-            self.search_processor.processor.model = get_model_instance()
+            model = get_model_instance()
         except (RuntimeError, Exception, FileNotFoundError) as e:
             log_error(f"Unable to load model: {e}")
+            raise (e, f"Unable to load model: {e}")
 
+        self.search_processor = SearchBlast(model)
         self.search_processor.set_e_value_trash(e_value_trash)
         self.page_size = page_size
 
@@ -54,6 +56,8 @@ class FastSearch(object):
         source_coo = source_record['source_coo']
         source_sequence = source_record['sequence']
         source_embedding = source_record['embedding']
+        source_stride = source_record['source_stride']
+
         del blast_records['source']
         subj_keys = list(blast_records.keys())
 
@@ -78,6 +82,7 @@ class FastSearch(object):
             task_id=self.task_id,
             e_value_map=e_value_map,
             source_sequence=source_sequence,
+            source_stride=source_stride,
             processed_queue=processed_queue,
             n_total_items=n_total_items,
             page_size=self.page_size,
@@ -96,6 +101,7 @@ class FastSearch(object):
                 output_mgr.put_results(results, total_processed==n_total_items)
             except (RuntimeError, Exception) as e:
                 log_error(message=f"Task: {self.task_id} An error occurred while processing candidates: {e}")
+                raise e
 
         log_message(message=f"Task: {self.task_id} completed")
 
@@ -104,6 +110,7 @@ class OutputMgr(object):
                  task_id,
                  e_value_map,
                  source_sequence,
+                 source_stride,
                  processed_queue,
                  n_total_items,
                  page_size,
@@ -112,6 +119,7 @@ class OutputMgr(object):
                  ):
         self.task_id = task_id
         self.source_sequence = source_sequence
+        self.source_stride = source_stride
         self.e_value_map = e_value_map
         self.processed_items = {}
         self.processed_queue = processed_queue
@@ -171,6 +179,9 @@ class OutputMgr(object):
         rotation_mx = record['rotation_mx'].tolist()
         translation_mx = record['translation_mx'].tolist()
         rmsd = record['rmsd']
+        subj_stride = self.__convert_to_stride(record['stride'])
+        subj_stride = subj_stride[select_idx_start:select_idx_end]
+
         try:
             file_data = self.processed_items[file_idx]
         except KeyError:
@@ -188,13 +199,13 @@ class OutputMgr(object):
                                                     select_ids=(select_idx_start, select_idx_end),
                                                     subj_sequence=subj_fasta)
 
-
         out_msg = {
             'pdb_id': pdb_id,
             'chain': chain,
             'position': position,  # -1, -1 for full chain
             'e_value': e_value,
-            'fasta': subj_fasta,
+            'fasta': {'source': self.source_sequence, 'subj':subj_fasta[select_idx_start:select_idx_end]},
+            'stride': {'source': self.source_stride, 'subj':subj_stride},
             'rmsd': rmsd,
             'fasta_identity_score': fasta_identity_score,
             'sup_matrix': {'apply_to': apply_to, 'rotation': rotation_mx, 'translation': translation_mx},
@@ -239,6 +250,11 @@ class OutputMgr(object):
             s += 'X'
         return s
 
+    @staticmethod
+    def __convert_to_stride(arr):
+        s = ''.join(STRIDE_LETTERS[i] for i in arr)
+        return s
+
     def extract_msg(self, msg, file_idx):
         try:
             file_data = self.processed_items[file_idx]
@@ -259,9 +275,14 @@ test_file = '/home/dp/Data/PDB/2ko3.pdb'
 def test_callback(msg):
     print(msg)
 
-if __name__ == '__main__':
+
+def test_search():
     search_engine = FastSearch(task_id='2ocs',
                                pdb_file=test_file,
                                chain='A',
                                e_value_trash='auto')
     search_engine.run_search(callback_fn=test_callback)
+
+
+if __name__ == '__main__':
+    rebuild_database()

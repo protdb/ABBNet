@@ -5,6 +5,7 @@ from model.gvp_layers import GVP, LayerNorm, GVPConvLayer
 from model.model_utils import GaussianSmearing, DihedralFeatures
 import torch_geometric
 from pdb_datasets.datasets import SAML
+from finetune.finetune_dataset import STRIDE_LETTERS
 
 
 class ABBModel(nn.Module):
@@ -52,6 +53,12 @@ class ABBModel(nn.Module):
                 activations=(None, None))
         )
 
+        self.gvp_out_stride = nn.Sequential(
+            LayerNorm(h_node_out_emb_dim),
+            GVP(h_node_out_emb_dim, (len(STRIDE_LETTERS), 0),
+                activations=(None, None))
+        )
+
         self.encoder_rnn = nn.LSTM(hidden_emb_nodes_dim[0],
                                    hidden_emb_nodes_dim[0],
                                    num_layers=2,
@@ -66,7 +73,7 @@ class ABBModel(nn.Module):
                                                  bias=True)
                                          for _ in range(config.n_gvp_encoder_layers))
 
-    def forward(self, batch, return_embedding=False):
+    def forward(self, batch):
         h_node_embeddings, h_edge_embeddings = self.build_features_embeddings(batch)
 
         for layer in self.gvp_encoder:
@@ -77,8 +84,6 @@ class ABBModel(nn.Module):
         rnn_embeddings = rnn_embeddings[rnn_mask]
         h_node_embeddings = (rnn_embeddings, h_node_embeddings[1])
         encoder_embeddings = h_node_embeddings
-        if return_embedding:
-            return encoder_embeddings[0]
 
         for i, layer in enumerate(self.gvp_decoder):
             h_node_embeddings = layer(h_node_embeddings, batch.edge_index, h_edge_embeddings,
@@ -88,8 +93,12 @@ class ABBModel(nn.Module):
             rnn_embeddings = rnn_embeddings[rnn_mask]
             h_node_embeddings = (rnn_embeddings, h_node_embeddings[1])
 
-        h_node_embeddings = self.gvp_out(h_node_embeddings)
-        return h_node_embeddings, encoder_embeddings[0]
+        h_node_embeddings_alphabet = self.gvp_out(h_node_embeddings)
+        h_node_embeddings_stride = self.gvp_out_stride(h_node_embeddings)
+        return torch.log_softmax(h_node_embeddings_alphabet, dim=-1), \
+            torch.log_softmax(h_node_embeddings_stride, dim=-1), \
+            encoder_embeddings[0]
+
 
     def build_features_embeddings(self, batch):
         node_scalar_features, node_vector_features = batch.node_features

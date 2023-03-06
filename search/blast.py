@@ -5,15 +5,16 @@ import numpy as np
 from Bio.Blast import NCBIXML
 from Bio.Blast.Applications import NcbiblastpCommandline
 from config.config import DBConfig
+from model_processor.data_processor import ModelProcessor
 from search.search_processor import SearchProcessor
 
 
 class SearchBlast(object):
-    def __init__(self, task_id, search_mode=0):
+    def __init__(self, model):
         self.config = DBConfig()
         self.pdb_dir = self.config.pdb_dir
         assert os.path.exists(self.pdb_dir)
-        self.processor = SearchProcessor(task_id, search_mode)
+        self.processor = ModelProcessor(model)
         self.db_data = {}
         self.db_idx = 0
         self.e_value_trash = self.config.e_value_trash
@@ -30,11 +31,11 @@ class SearchBlast(object):
         try:
             saml = result['alphabet']
             embedding = result['embedding']
-            groups = result['groups']
             sequence = result['sequence']
             source_coo = result['source_coo']
-        except KeyError:
-            return result
+            source_stride = result['stride']
+        except KeyError as e:
+            raise e
         if self.e_value_trash == 'auto':
             scale = np.round(np.sqrt(len(embedding) / 10)) - 1
             self.e_value_trash = 1.0 * 10 ** -scale
@@ -42,10 +43,10 @@ class SearchBlast(object):
         source_record = dict({'saml': saml,
                               'file': pdb_file,
                               'chain': chain,
-                              'groups': groups,
                               'sequence': sequence,
                               'embedding': embedding,
-                              'source_coo': source_coo
+                              'source_coo': source_coo,
+                              'source_stride': source_stride
                               })
         result.update({'source': source_record})
         return result

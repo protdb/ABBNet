@@ -14,30 +14,36 @@ class mmMetrics(object):
         self.epoch = epoch
         self.phase = phase
         self.total_loss = 0.0
-        self.total_correct = 0.0
+        self.total_corrects_stride = 0.0
+        self.total_corrects_alphabet = 0.0
+        self.stride_loss = 0.0
+        self.alphabet_loss = 0.0
         self.total_nodes = 0
-        self.confusion = np.zeros((len(SAML), len(SAML)))
-        self.batch_size = None
         config = BaseConfig()
         self.print_to_file = config.log_result == 'file'
         if self.print_to_file:
             self.metric_file = config.get_metric_log_file()
 
     def push_step_metric(self, metric_rec):
-        self.total_loss += metric_rec['loss'] * metric_rec['num_nodes']
-        self.total_correct += metric_rec['correct']
+        items_metric = metric_rec['items_metric']
+        self.stride_loss += items_metric['stride']['loss'] * metric_rec['num_nodes']
+        self.alphabet_loss += items_metric['alphabet']['loss'] * metric_rec['num_nodes']
+        self.total_loss += self.stride_loss + self.alphabet_loss
+        self.total_corrects_stride += items_metric['stride']['correct']
+        self.total_corrects_alphabet += items_metric['alphabet']['correct']
         self.total_nodes += metric_rec['num_nodes']
-        self.confusion += metric_rec['confusion']
-        self.batch_size = metric_rec['batch_size']
 
     def print_metrics(self):
         print('*' * 32)
         print(f'Epoch: {self.epoch} Phase: {self.phase}')
-        print(f'Loss: {self.total_loss / self.total_nodes:4f}')
-        print(f'Correct: {self.total_correct:2f}')
-        print(f'Acc: {self.total_correct / self.total_nodes:4f}')
+        print(f'Total loss: {self.total_loss / self.total_nodes:4f}')
+        print(f'Correct (stride): {self.total_corrects_stride:2f}')
+        print(f'Correct (alphabet): {self.total_corrects_alphabet:2f}')
+        print(f'Acc (stride): {self.total_corrects_stride / self.total_nodes:4f}')
+        print(f'Acc (alphabet): {self.total_corrects_alphabet / self.total_nodes:4f}')
+        print(f'Loss (stride): {self.stride_loss / self.total_nodes:4f}')
+        print(f'Loss (alphabet): {self.alphabet_loss / self.total_nodes:4f}')
         print()
-        #print(self.confusion)
         print()
         return self.total_loss / self.total_nodes
 

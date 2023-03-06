@@ -20,17 +20,20 @@ class FastSearchModel(nn.Module):
 
         with torch.no_grad():
             batch.to(self.device)
-            embeddings = self.encoder(batch, return_embedding=True)
+            _, stride_emb, embeddings = self.encoder(batch)
             coo = batch.x
             batch_size = batch.batch.max() + 1
             for batch_id in range(batch_size):
                 mask = [batch.batch == batch_id]
                 subj_embedding = embeddings[mask]
+                stride_logit = stride_emb[mask]
+                stride = torch.argmax(stride_logit, dim=-1).detach().cpu().numpy()
                 subj_coo = coo[mask]
                 assert len(subj_embedding) == len(subj_coo)
                 inference_record = self.inference(subj_embedding, subj_coo)
                 file_idx = batch.file_idx[batch_id]
                 inference_record.update({'file_idx': file_idx.detach().item()})
+                inference_record.update({'stride': stride})
                 results.append(inference_record)
 
         return results
@@ -42,7 +45,6 @@ class FastSearchModel(nn.Module):
 
         if apply_to == 'subj':
             reference_coo, target_coo = target_coo, reference_coo
-
         target_coo = target_coo[select_idx:select_idx + len(reference_coo), :]
         assert len(reference_coo) == len(target_coo)
 
