@@ -7,6 +7,7 @@ from worker_framework.message_managers import HttpPollMsgManager
 
 from result_callback import get_result_callback
 from abbconfig import ABBNetConfig
+from get_chain_id import get_chain_id
 
 from fast_search.search_engine import FastSearch
 
@@ -26,14 +27,19 @@ class ABBNetRunner(Runner):
             target_filename=file_name,
             preprocess=False
         ).store_file()
+        file_path = os.path.join(self.cfg.local_cache_dir, file_name)
         if task.search_parameters.e_value is None or task.search_parameters.e_value <= 0:
             e_value = 'auto'
         else:
             e_value = task.search_parameters.e_value
+        if not task.search_parameters.chain:
+            chain = get_chain_id(file_path)
+        else:
+            chain = task.search_parameters.chain
         search_engine = FastSearch(
             task_id=task.id,
-            pdb_file=os.path.join(self.cfg.local_cache_dir, file_name),
-            chain=task.search_parameters.chain,
+            pdb_file=file_path,
+            chain=chain,
             e_value_trash=e_value,
             page_size=10
         )

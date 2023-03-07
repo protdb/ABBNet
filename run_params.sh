@@ -5,7 +5,7 @@ IMAGE_BASE_NAME="abbnet_search"
 
 declare -A DOCKER_PARAMS
 # launch parameters for every environment
-DOCKER_PARAMS["localhost"]=""
+DOCKER_PARAMS["localhost"]="--shm-size=4G"
 DOCKER_PARAMS["test"]="--cpus=16 --shm-size=64G"
 
 declare -A VOLUMES

@@ -2,23 +2,35 @@ from abbconfig import ABBNetConfig
 from worker_framework import TaskTransfer
 from typing import Callable
 import json
-from Bio.pairwise2 import align
+from Bio.Align import PairwiseAligner
 import pika
 import logging
-
 logging.getLogger("pika").setLevel(logging.WARNING)
 
 
 def get_align_params(sequences):
-    aln = align.globalxd(sequences['source'], sequences['subj'], -1, -1, -0.5, -0.5)[0]
+    aligner = PairwiseAligner()
+    aligner.mode = 'global'
+    try:
+        alns = aligner.align(sequences['source'], sequences['subj'])
+        align = alns.__next__()
+        score = align.score / len(sequences['source'])
+        aln = str(align).split('\n')
+    except StopIteration:
+        return {
+            "score": 0,
+            "source_line": sequences['source'],
+            "compare_line": sequences['subj'],
+            "highlights": []
+        }
     highlights = []
-    for idx, letter in enumerate(aln.seqA):
-        if aln.seqB[idx] == letter:
+    for idx, letter in enumerate(aln[0]):
+        if aln[2][idx] == letter:
             highlights.append(idx)
     return {
-        "score": aln.score / len(sequences['source']),
-        "source_line": aln.seqA,
-        "compare_line": aln.seqB,
+        "score": score,
+        "source_line": aln[0],
+        "compare_line": aln[2],
         "highlights": highlights
     }
 
