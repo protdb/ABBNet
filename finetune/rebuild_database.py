@@ -81,8 +81,7 @@ class FinetuneDBBuilder(object):
 
         with open(fa_path, 'w') as fa_out:
             for key in data:
-                record = data['key']
-                saml = record['saml']
+                saml = data[key]
                 fa_str = f">{key}\n{saml}\n"
                 fa_out.write(fa_str)
 
@@ -92,7 +91,7 @@ class FinetuneDBBuilder(object):
         fa_path = self.config.get_fa_path()
         blast_db = self.config.get_blast_db_name()
         blast_db_folder = self.config.get_blast_folder()
-        [f.unlink() for f in Path(blast_db_folder).glob("*") if f.is_file()] # remove old database
+        [f.unlink() for f in Path(blast_db_folder).glob("*") if f.is_file() and str(f) != str(fa_path)] # remove old db
 
         cmd = f"makeblastdb  -dbtype prot  -in {fa_path} -out {blast_db} -parse_seqids"
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -103,7 +102,7 @@ class FinetuneDBBuilder(object):
 
 def rebuild_database():
     dbBuilder = FinetuneDBBuilder()
-    dbBuilder.build_database()
+   # dbBuilder.build_database()
     dbBuilder.create_fa()
     dbBuilder.build_blast_db()
 
