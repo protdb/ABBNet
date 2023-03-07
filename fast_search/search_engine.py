@@ -15,11 +15,13 @@ from Bio import pairwise2
 
 shared_model = None
 
+
 def get_model_instance():
     global shared_model
     if shared_model is None:
             shared_model = load_shared_model()
     return shared_model
+
 
 class FastSearch(object):
     def __init__(self,

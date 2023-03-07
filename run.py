@@ -1,7 +1,5 @@
 from fast_search.pdb_preprocessor import build_test_db
 from fast_search.search_engine import FastSearch
-from finetune.rebuild_database import rebuild_database
-from trainers.train_model import train_abb_model
 
 
 def start_task(task_id,
@@ -10,19 +8,18 @@ def start_task(task_id,
                callback_fn,
                e_value_trash='auto',
                page_size=32):
-
-
-        search_engine=FastSearch(task_id=task_id,
-                                 pdb_file=pdb_file,
-                                 chain=chain,
-                                 e_value_trash=e_value_trash,
-                                 page_size=page_size
-                                 )
-        search_engine.run_search(callback_fn=callback_fn)
+    search_engine = FastSearch(task_id=task_id,
+                               pdb_file=pdb_file,
+                               chain=chain,
+                               e_value_trash=e_value_trash,
+                               page_size=page_size
+                               )
+    search_engine.run_search(callback_fn=callback_fn)
 
 
 def test_callback(msg):
     print(msg)
+
 
 """ message = {
                 'task_id': input task id 
@@ -49,15 +46,14 @@ def test_callback(msg):
             }
 """
 
-## To generate test preprocessed DB:
+
+# To generate test preprocessed DB:
 
 def create_test_db():
-    test_db_ids = [('2ko3', 'A'), ('2ocs', 'A'), ('1tit', 'A')] # PDB ID - Chain list
-                                                                # Path to PDB files storage  class BaseConfig(object):
-                                                                #                    pdb_dir = '/home/dp/Data/PDB/'
+    test_db_ids = [('2ko3', 'A'), ('2ocs', 'A'), ('1tit', 'A')]  # PDB ID - Chain list
+    # Path to PDB files storage  class BaseConfig(object):
+    #                    pdb_dir = '/home/dp/Data/PDB/'
     build_test_db(test_db_ids)
-
-
 
 
 def test_search():
@@ -70,7 +66,4 @@ def test_search():
 
 
 if __name__ == '__main__':
-   test_search()
-
-
-
+    test_search()

@@ -1,0 +1,8 @@
+biopython==1.79
+pandas
+einops
+matplotlib
+requests
+pika
+pydantic
+sentry-sdk

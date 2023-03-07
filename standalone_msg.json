@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "apfid": "1M9E_A",
+    "model_id": 1,
+    "url": "https://psskb.org/storage/pdb/1M9E/A/1/structure.pdb",
+    "search_parameters": {
+      "experiment_id": "1M9E",
+      "start": 0,
+      "end": 0,
+      "chain": "A",
+      "e_value": -1,
+      "search_mode": "basic",
+      "name": "B-barrel"
+    }
+  }
+]

@@ -6,8 +6,8 @@ from utils.utils import singleton
 
 @singleton
 class BaseConfig(object):
-    pdb_dir = '/home/dp/Data/PDB/'
-    working_dir = '/home/dp/Data/SAML'
+    pdb_dir = '/pdb'
+    working_dir = '/data'
     samples_dir = 'samples'
     tmp_dir = '_tmp'
     train_dir = 'train'
@@ -19,7 +19,7 @@ class BaseConfig(object):
     min_chain_len = 16
     max_chain_len = 2048
     batch_size = 8
-    num_workers = 16
+    num_workers = 8
     train_epochs = 16
     eval_models_every = 2
     log_result = 'file'
@@ -31,7 +31,7 @@ class BaseConfig(object):
     augmentation = {'rotate': True, 'translate': True}
     augmentation_factor = 0.4
     train_file = '/home/dp/Downloads/download_pdb_seq (2).txt'
-    stride_folder = "/home/dp/Data/stride"
+    stride_folder = "/data/stride"
     finetune_samples_file = 'finetune_samples.pkl'
     finetune_split_factor = 0.7
     finetune_set_names = ['train_set_idx', 'test_set_idx']
@@ -60,7 +60,6 @@ class BaseConfig(object):
         if os.path.exists(tmp_dir):
             shutil.rmtree(str(tmp_dir))
         tmp_dir.mkdir(exist_ok=True)
-
 
     def get_samples_dir(self):
         working_dir = Path(self.working_dir)

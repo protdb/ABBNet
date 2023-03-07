@@ -14,7 +14,7 @@ def load_shared_model():
     model.to(device)
     logger = logging.getLogger()
     if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path), strict=False)
+        model.load_state_dict(torch.load(model_path, map_location=device), strict=False)
         logger.info(msg=f'Model loaded {model_path}')
     else:
         logger.error(msg=f'Model not found {model_path}')
