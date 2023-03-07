@@ -50,14 +50,12 @@ class FastSearch(object):
 
     def run_search(self, callback_fn=None):
         log_message(message=f"Start task: {self.task_id}")
-
         blast_records = self.search_processor.search_blast_hits(self.source_pdb_file, self.source_chain)
         source_record = blast_records['source']
         source_coo = source_record['source_coo']
         source_sequence = source_record['sequence']
         source_embedding = source_record['embedding']
         source_stride = source_record['source_stride']
-
         del blast_records['source']
         subj_keys = list(blast_records.keys())
 
@@ -100,7 +98,7 @@ class FastSearch(object):
                 total_processed += batch_size
                 output_mgr.put_results(results, total_processed==n_total_items)
             except (RuntimeError, Exception) as e:
-                log_error(message=f"Task: {self.task_id} An error occurred while processing candidates: {e}")
+                log_error(message=f"Task: {self.task_id} An error occurred while processing candidates: {str(e)}")
                 raise e
 
         log_message(message=f"Task: {self.task_id} completed")
@@ -208,7 +206,7 @@ class OutputMgr(object):
             'stride': {'source': self.source_stride, 'subj':subj_stride},
             'rmsd': rmsd,
             'fasta_identity_score': fasta_identity_score,
-            'sup_matrix': {'apply_to': apply_to, 'rotation': rotation_mx, 'translation': translation_mx},
+            'sup_matrix': {'apply_to': 'subj', 'rotation': rotation_mx, 'translation': translation_mx},
         }
 
         if self.pdb_extractor:

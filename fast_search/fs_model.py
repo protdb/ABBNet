@@ -44,16 +44,20 @@ class FastSearchModel(nn.Module):
         target_coo = subj_coo
 
         if apply_to == 'subj':
-            reference_coo, target_coo = target_coo, reference_coo
-        target_coo = target_coo[select_idx:select_idx + len(reference_coo), :]
-        assert len(reference_coo) == len(target_coo)
+            align_size = len(target_coo)
+            reference_coo = reference_coo[select_idx:select_idx + align_size, :]
+        else:
+            align_size = len(reference_coo)
+            target_coo = target_coo[select_idx:select_idx + align_size, :]
 
-        rx, tx =self.__svd_impose(reference_coo, target_coo)
-        rmsd = self.align(target_coo, reference_coo, rx, tx)
+        assert len(reference_coo) == len(target_coo), 'alignment processing error'
+
+        rx, tx =self.__svd_impose(target_coo, reference_coo)
+        rmsd = self.align(reference_coo, target_coo, rx, tx)
         inference_record = {
             'apply_to': apply_to,
             'select_idx_start': select_idx,
-            'select_idx_end': select_idx + len(reference_coo),
+            'select_idx_end': select_idx + align_size,
             'rotation_mx': rx.detach().cpu().numpy(),
             'translation_mx': tx.detach().cpu().numpy(),
             'rmsd': rmsd.detach().cpu().item(),
