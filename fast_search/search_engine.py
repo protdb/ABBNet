@@ -192,6 +192,9 @@ class OutputMgr(object):
         positions_idx = [s.replace(chain, '') for s in subj_position]
         position = (-1, -1) if apply_to == 'subj' else (positions_idx[select_idx_start],
                                                         positions_idx[select_idx_end -1])
+        abs_positions = (0, len(self.source_sequence)) if apply_to == 'subj' else (select_idx_start, select_idx_end)
+
+
         subj_fasta = self.__convert_fasta(subj_sequence)
         fasta_identity_score = self.__fasta_identity(apply_to,
                                                     select_ids=(select_idx_start, select_idx_end),
@@ -201,6 +204,7 @@ class OutputMgr(object):
             'pdb_id': pdb_id,
             'chain': chain,
             'position': position,  # -1, -1 for full chain
+            'abs_position': abs_positions,
             'e_value': e_value,
             'fasta': {'source': self.source_sequence, 'subj':subj_fasta[select_idx_start:select_idx_end]},
             'stride': {'source': self.source_stride, 'subj':subj_stride},
