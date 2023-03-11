@@ -1,6 +1,6 @@
 from abbconfig import ABBNetConfig
 from worker_framework import TaskTransfer
-from typing import Callable
+from typing import Callable, Dict
 import json
 from Bio.Align import PairwiseAligner
 import pika
@@ -11,6 +11,7 @@ logging.getLogger("pika").setLevel(logging.WARNING)
 def get_align_params(sequences):
     aligner = PairwiseAligner()
     aligner.mode = 'global'
+
     try:
         alns = aligner.align(sequences['source'], sequences['subj'])
         align = alns.__next__()
@@ -23,10 +24,14 @@ def get_align_params(sequences):
             "compare_line": sequences['subj'],
             "highlights": []
         }
+    print(aln)
     highlights = []
     for idx, letter in enumerate(aln[0]):
-        if aln[2][idx] == letter:
-            highlights.append(idx)
+        try:
+            if aln[2][idx] == letter and letter not in ('-', ' '):
+                highlights.append(idx)
+        except IndexError:
+            pass
     return {
         "score": score,
         "source_line": aln[0],
@@ -35,10 +40,32 @@ def get_align_params(sequences):
     }
 
 
-def get_result_callback(cfg: ABBNetConfig, task: TaskTransfer) -> Callable:
+def push_result(cfg: ABBNetConfig, message: Dict) -> None:
+    params = pika.connection.URLParameters(cfg.rmq_upload_uri_string)
+    with pika.BlockingConnection(params) as conn:
+        chan = conn.channel()
+        chan.basic_publish(
+            exchange=cfg.rmq_upload_exchange,
+            routing_key='',
+            body=json.dumps(message).encode('utf8'),
+            properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent)
+        )
+
+
+def get_result_callback(cfg: ABBNetConfig, task: TaskTransfer) -> Callable[[Dict], None]:
+    closure_data = {
+        'total_sent': False
+    }
 
     def callback(msg):
         logging.debug(json.dumps(msg))
+        if not closure_data['total_sent']:
+            push_result(cfg, {
+                'task_type': 'SEARCH_UPDATE_TOTAL',
+                'task_id': task.id,
+                'total': msg['total']
+            })
+            closure_data['total_sent'] = True
         for struct in msg['data']:
             if struct['position'][0] == struct['position'][1]:
                 struct['position'] = (None, None)
@@ -61,14 +88,6 @@ def get_result_callback(cfg: ABBNetConfig, task: TaskTransfer) -> Callable:
                     }
                 }
             # pushing result to RMQ
-            params = pika.connection.URLParameters(cfg.rmq_upload_uri_string)
-            with pika.BlockingConnection(params) as conn:
-                chan = conn.channel()
-                chan.basic_publish(
-                    exchange=cfg.rmq_upload_exchange,
-                    routing_key='',
-                    body=json.dumps(result).encode('utf8'),
-                    properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent)
-                )
+            push_result(cfg, result)
 
     return callback
