@@ -1,8 +1,5 @@
-import os
-
 from worker_framework import Runner, TaskTransfer
 from worker_framework.tools.workdir import CreateDirMode
-from worker_framework.tools.fileprocessor import FileProcessor
 from worker_framework.message_managers import HttpPollMsgManager
 
 from result_callback import get_result_callback
@@ -15,19 +12,12 @@ from fast_search.search_engine import FastSearch
 class ABBNetRunner(Runner):
     cfg = ABBNetConfig()
     create_dir_mode = CreateDirMode.not_required
-    auto_store_file = False
+    auto_store_file = True
     msg_manager_class = HttpPollMsgManager
 
     def handler(self, task: TaskTransfer) -> TaskTransfer:
         print(f"handling {task.id}")
-        file_name = f"{task.apfid}_{task.id}.pdb"
-        FileProcessor(
-            task.url,
-            self.cfg.local_cache_dir,
-            target_filename=file_name,
-            preprocess=False
-        ).store_file()
-        file_path = os.path.join(self.cfg.local_cache_dir, file_name)
+        file_path = self.get_file_name(task)
         if task.search_parameters.e_value is None or task.search_parameters.e_value <= 0:
             e_value = 'auto'
         else:

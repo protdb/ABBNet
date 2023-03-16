@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r /app/torch-requirements-p2.txt
 
 COPY ./pss_worker_framework-0.1.1.tar.gz /app
 RUN ls -1 /app
-RUN pip install /app/pss_worker_framework-0.1.1.tar.gz
+RUN pip install /app/pss_worker_framework-0.1.3.tar.gz
 ADD ./requirements.txt /app
 RUN pip install -r /app/requirements.txt
 
