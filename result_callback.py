@@ -94,6 +94,7 @@ def get_result_callback(cfg: ABBNetConfig, task: TaskTransfer) -> Callable[[Dict
                             'chain_id': struct['chain'],
                             'start': struct['position'][0],
                             'end': struct['position'][1],
+                            'len': struct['abs_position'][1] - struct['abs_position'][0],
                             'e_value': struct['e_value'],
                             'name': task.search_parameters.name,
                             'task_id': task.id,
