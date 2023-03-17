@@ -175,13 +175,10 @@ class OutputMgr(object):
         file_idx = record['file_idx']
         select_idx_start = record['select_idx_start']
         select_idx_end = record['select_idx_end']
-        apply_to = record['apply_to']
         rotation_mx = record['rotation_mx'].tolist()
         translation_mx = record['translation_mx'].tolist()
         rmsd = record['rmsd']
         subj_stride = self.__convert_to_stride(record['stride'])
-        subj_stride = subj_stride[select_idx_start:select_idx_end]
-
         try:
             file_data = self.processed_items[file_idx]
         except KeyError:
@@ -191,25 +188,31 @@ class OutputMgr(object):
         subj_filename, _, subj_sequence, subj_position, _ = file_data
         e_value = self.e_value_map[subj_filename]
         pdb_id, chain = subj_filename.split(':')
-        positions_idx = [s.replace(chain, '') for s in subj_position]
-        position = (-1, -1) if apply_to == 'subj' else (positions_idx[select_idx_start],
-                                                        positions_idx[select_idx_end -1])
-        abs_positions = (0, len(self.source_sequence)) if apply_to == 'subj' else (select_idx_start, select_idx_end)
+        positions_idx = [s[1:] for s in subj_position]
+        source_stride = self.source_stride
+        source_sequence = self.source_sequence
 
+        is_cut_sub = len(self.source_sequence) < len(subj_sequence)
+        if is_cut_sub:
+            subj_stride = subj_stride[select_idx_start:select_idx_end]
+            subj_sequence = subj_sequence[select_idx_start:select_idx_end]
+        else:
+            source_stride = source_stride[:len(subj_sequence)]
+            source_sequence = source_sequence[:len(subj_sequence)]
 
+        position = (-1, -1) if not is_cut_sub else (positions_idx[select_idx_start],
+                                                    positions_idx[select_idx_end - 1])
+        abs_positions = (0, len(subj_sequence)) if not is_cut_sub else (select_idx_start, select_idx_end)
         subj_fasta = self.__convert_fasta(subj_sequence)
-        fasta_identity_score = self.__fasta_identity(apply_to,
-                                                    select_ids=(select_idx_start, select_idx_end),
-                                                    subj_sequence=subj_fasta)
-
+        fasta_identity_score = self.__fasta_identity(source_sequence, subj_sequence)
         out_msg = {
             'pdb_id': pdb_id,
             'chain': chain,
             'position': position,  # -1, -1 for full chain
             'abs_position': abs_positions,
             'e_value': e_value,
-            'fasta': {'source': self.source_sequence, 'subj':subj_fasta[select_idx_start:select_idx_end]},
-            'stride': {'source': self.source_stride, 'subj':subj_stride},
+            'fasta': {'source': source_sequence, 'subj':subj_fasta},
+            'stride': {'source': source_stride, 'subj':subj_stride},
             'rmsd': rmsd,
             'fasta_identity_score': fasta_identity_score,
             'sup_matrix': {'apply_to': 'subj', 'rotation': rotation_mx, 'translation': translation_mx},
@@ -222,20 +225,13 @@ class OutputMgr(object):
         del self.processed_items[file_idx] # release memory
         return out_msg
 
-    def __fasta_identity(self,
-                         apply_to,
-                         select_ids,
+    @staticmethod
+    def __fasta_identity(source_sequence,
                          subj_sequence,
                          ):
 
-
-        reference_sequence = self.source_sequence
+        reference_sequence = source_sequence
         target_sequence = subj_sequence
-
-        if apply_to == 'subj':
-            reference_sequence, target_sequence = target_sequence, reference_sequence
-
-        target_sequence = target_sequence[select_ids[0]:select_ids[1]]
         assert len(reference_sequence) == len(target_sequence)
         try:
             align_score = pairwise2.align.globalxx(reference_sequence, target_sequence, score_only=True)
@@ -268,25 +264,3 @@ class OutputMgr(object):
 
         self.pdb_extractor.extract(msg, file_data)
 
-
-
-
-
-
-
-test_file = '/home/dp/Data/PDB/2ko3.pdb'
-
-def test_callback(msg):
-    print(msg)
-
-
-def test_search():
-    search_engine = FastSearch(task_id='2ocs',
-                               pdb_file=test_file,
-                               chain='A',
-                               e_value_trash='auto')
-    search_engine.run_search(callback_fn=test_callback)
-
-
-if __name__ == '__main__':
-    rebuild_database()
