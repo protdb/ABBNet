@@ -243,11 +243,11 @@ class OutputMgr(object):
     @staticmethod
     def __convert_fasta(sequence):
         s = ''
-        try:
-            for i in range(len(sequence)):
-                s += three_to_one(sequence[i])
-        except IndexError:
-            s += 'X'
+        for i in sequence:
+            try:
+                s += three_to_one(i)
+            except (KeyError, IndexError):
+                s += '?'
         return s
 
     @staticmethod
